@@ -313,6 +313,7 @@ module.exports = Surface = class Surface extends CocoClass
       selectedThang: @spriteBoss.selectedSprite?.thang
       progress: progress
       frame: @currentFrame
+      lastFrame: @lastFrame
       world: @world
     )
 

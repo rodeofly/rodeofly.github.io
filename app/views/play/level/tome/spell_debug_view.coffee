@@ -17,6 +17,8 @@ module.exports = class DebugView extends View
     'god:debug-world-load-progress-changed': 'handleWorldLoadProgressChanged'
     'tome:spell-shown': 'changeCurrentThangAndSpell'
     'tome:cast-spells': 'onTomeCast'
+    'god:debug-flow-return': 'handleDebugFlow'
+    'tome:debug-flow-request': 'retrieveFlowForFrame'
     'surface:frame-changed': 'onFrameChanged'
     'tome:spell-has-changed-significantly-calculation': 'onSpellChangedCalculation'
 
@@ -32,7 +34,7 @@ module.exports = class DebugView extends View
     @globals = {Math: Math, _: _, String: String, Number: Number, Array: Array, Object: Object}  # ... add more as documented
     for className, serializedClass of serializedClasses
       @globals[className] = serializedClass
-
+    @currentlyRetrievingFlow = false
     @onMouseMove = _.throttle @onMouseMove, 25
     @cache = {}
     @lastFrameRequested = -1
@@ -176,7 +178,18 @@ module.exports = class DebugView extends View
     
   onSpellChangedCalculation: (data) ->
     @spellHasChanged = data.hasChangedSignificantly
-    
+
+  retrieveFlowForFrame: =>
+    unless @currentlyRetrievingFlow
+      @currentlyRetrievingFlow = true
+      Backbone.Mediator.publish 'tome:spell-debug-flow-request',
+        thangID: @thang.id
+        spellID: @spell.name
+        variableChain: @variableChain
+        frame: @currentFrame
+        
+  handleDebugFlow: ->
+    @currentlyRetrievingFlow = false
   update: ->
     if @variableChain
       if @spellHasChanged

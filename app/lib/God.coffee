@@ -13,6 +13,7 @@ module.exports = class God extends CocoClass
   subscriptions:
     'tome:cast-spells': 'onTomeCast'
     'tome:spell-debug-value-request': 'retrieveValueFromFrame'
+    'tome:spell-debug-flow-request': 'retrieveFlowForFrame'
     'god:new-world-created': 'onNewWorldCreated'
 
   constructor: (options) ->
@@ -112,6 +113,23 @@ module.exports = class God extends CocoClass
         currentThangID: args.thangID
         currentSpellID: args.spellID
         variableChain: args.variableChain
+  
+  retrieveFlowForFrame: (args) =>
+    return if @destroyed
+    return unless args.thangID and args.spellID
+    @debugWorker ?= @createDebugWorker()
+    args.frame ?= @angelsShare.world.age / @angelsShare.world.dt
+    @debugWorker.postMessage
+      func: 'retrieveFlowForFrame'
+      args:
+        currentThangID: args.thangID
+        currentSpellID: args.spellID
+        userCodeMap: @currentUserCodeMap
+        level: @level
+        levelSessionIDs: @levelSessionIDs
+        goals: @goalManager?.getGoals()
+        frame: args.frame
+        
 
   createDebugWorker: ->
     worker = new Worker '/javascripts/workers/worker_world.js'
@@ -126,6 +144,8 @@ module.exports = class God extends CocoClass
         Backbone.Mediator.publish 'god:debug-value-return', event.data.serialized
       when 'debug-world-load-progress-changed'
         Backbone.Mediator.publish 'god:debug-world-load-progress-changed', event.data
+      when 'debug-flow-return'
+        Backbone.Mediator.publish 'god:debug-flow-return', event.data.serializedFlow
 
   onNewWorldCreated: (e) ->
     @currentUserCodeMap = @filterUserCodeMapWhenFromWorld e.world.userCodeMap

@@ -36,6 +36,7 @@ module.exports = class SpellView extends View
     'surface:coordinate-selected': 'onCoordinateSelected'
     'god:new-world-created': 'onNewWorld'
     'god:user-code-problem': 'onUserCodeProblem'
+    'god:debug-flow-return': 'handleDebugFlow'
     'god:non-user-code-problem': 'onNonUserCodeProblem'
     'tome:manual-cast': 'onManualCast'
     'tome:reload-code': 'onCodeReload'
@@ -62,6 +63,11 @@ module.exports = class SpellView extends View
     @writable = false unless me.team in @spell.permissions.readwrite  # TODO: make this do anything
     @highlightCurrentLine = _.throttle @highlightCurrentLine, 100
 
+  handleDebugFlow: (serializedFlow) ->
+    @tempFlow = serializedFlow
+    console.log "Spell view is handling debug flow return!"
+    if @thang then @highlightCurrentLine()
+    
   afterRender: ->
     super()
     @createACE()
@@ -508,7 +514,11 @@ module.exports = class SpellView extends View
   onFrameChanged: (e) ->
     return unless @spellThang and e.selectedThang?.id is @spellThang?.thang.id
     @thang = e.selectedThang  # update our thang to the current version
-    @highlightCurrentLine()
+    movedForward = e.lastFrame < e.frame
+    if movedForward
+      Backbone.Mediator.publish 'tome:debug-flow-request'
+    else
+      @highlightCurrentLine()
 
   onCoordinateSelected: (e) ->
     return unless @ace.isFocused() and e.x? and e.y?
@@ -523,6 +533,7 @@ module.exports = class SpellView extends View
     # TODO: move this whole thing into SpellDebugView or somewhere?
     @highlightComments() unless @destroyed
     flow ?= @spellThang?.castAether?.flow
+    flow = @tempFlow
     return unless flow
     executed = []
     executedRows = {}
@@ -545,7 +556,6 @@ module.exports = class SpellView extends View
     #state.executing = true if state.userInfo?.time is @thang.world.age  # no work
     currentCallIndex ?= callNumber - 1
     #console.log "got call index", currentCallIndex, "for time", @thang.world.age, "out of", states.length
-
     @decoratedGutter = @decoratedGutter || {}
 
     # TODO: don't redo the markers if they haven't actually changed

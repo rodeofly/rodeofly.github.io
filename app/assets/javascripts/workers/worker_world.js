@@ -33,7 +33,7 @@ if (!Function.prototype.bind) {
 self.window = self;
 self.workerID = "Worker";
 
-self.logLimit = 200;
+self.logLimit = 20000;
 self.logsLogged = 0;
 var console = {
   log: function() {
@@ -177,9 +177,39 @@ self.stringifyValue = function(value, depth) {
     return "" + prefix + brackets[0] + sep + "  " + (values.join(sep + '  ')) + sep + brackets[1];
 };
 
+self.stripEverythingButRangeFromFlow = function (flow) {
+    var newFlow = {};
+    newFlow.states = [];
+    for (var i = 0; i < flow.states.length; i++) {
+        var state = flow.states[i];
+        newFlow.states[i] = _.omit(flow.states[i], 'statements');
+        newFlow.states[i].statements = [];
+        for (var j = 0; j < state.statements.length; j++) {
+            newFlow.states[i].statements[j] = _.omit(state.statements[j],'variables');
 
+        }
+    }
+    return newFlow;
+};
+
+self.retrieveFlowForFrame = function retrieveFlowForFrame(args) {
+    var retrieveFlow = function retrieveFlow(currentThangID, currentSpellID) {
+        var flow = self.debugWorld.userCodeMap[currentThangID][currentSpellID].flow;
+        var ranges = self.stripEverythingButRangeFromFlow(flow);
+        self.postMessage({type: 'debug-flow-return', serializedFlow:ranges});
+    };
+    self.enableFlowOnThangSpell(args.currentThangID, args.currentSpellID, args.userCodeMap);
+    self.setupDebugWorldToRunUntilFrame(args);
+    self.debugWorld.loadFrames(
+        retrieveFlow.bind({}, args.currentThangID, args.currentSpellID),
+        self.onDebugWorldError,
+        self.onDebugWorldProgress,
+        false,
+        args.frame
+    );
+};
 self.retrieveValueFromFrame = function retrieveValueFromFrame(args) {
-
+    //In certain cases, use more robust method to serialize. (perhaps just one value)
     var retrieveProperty = function retrieveProperty(currentThangID, currentSpellID, variableChain)
     {
         var prop;
@@ -254,8 +284,17 @@ self.retrieveValueFromFrame = function retrieveValueFromFrame(args) {
 self.enableFlowOnThangSpell = function (thangID, spellID, userCodeMap) {
     try {
         var options = userCodeMap[thangID][spellID].originalOptions;
-        if (options.includeFlow === true && options.noSerializationInFlow === true)
+        var stringifiedUserCodeMap = JSON.stringify(userCodeMap);
+        var userCodeMapHasChanged = ! _.isEqual(self.currentUserCodeMapCopy, stringifiedUserCodeMap);
+        self.currentUserCodeMapCopy = stringifiedUserCodeMap;
+        
+        if (!userCodeMapHasChanged) //&& options.includeFlow === true && options.noSerializationInFlow === true)
+        {
+            console.log("_NOT_ redoing flow!");
             return;
+            
+        }
+            
         else
         {
             options.includeFlow = true;
