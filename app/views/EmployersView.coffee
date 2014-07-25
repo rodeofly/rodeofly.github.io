@@ -40,6 +40,8 @@ module.exports = class EmployersView extends RootView
     super()
     @sortTable() if @candidates.models.length
     @renderSavedFilters()
+    @getListOfApprovedCandidateSkills()
+    @setupTagSearch()
 
   afterInsert: ->
     super()
@@ -56,7 +58,7 @@ module.exports = class EmployersView extends RootView
   onFilterChanged: ->
     @resetFilters()
     that = @
-    $('#filters :input').each ->
+    $('#filters :input').not("#tags_filter :input").each ->
       input = $(this)
       checked = input.prop 'checked'
       name = input.attr 'name'
@@ -67,10 +69,11 @@ module.exports = class EmployersView extends RootView
         that.filters[name] = _.union that.filters[name], [value]
       else
         that.filters[name] = _.difference that.filters[name], [value]
-
+  
     for filterName, filterValues of @filters
       if filterValues.length is 0
         @filters[filterName] = @defaultFilters[filterName]
+    @filters["skillTagsFilter"] = @skillTagsAPI.tagsManager('tags')
     @applyFilters()
 
   openSignupModal: ->
@@ -84,6 +87,43 @@ module.exports = class EmployersView extends RootView
   resetFilters: ->
     for filterName, filterValues of @filters
       @filters[filterName] = []
+      
+  getListOfApprovedCandidateSkills: ->
+    candidateList = @getActiveAndApprovedCandidates()
+    candidateSkills = []
+    for candidate in candidateList
+      candidateSkills = _.union candidate.attributes.jobProfile.skills, candidateSkills
+    @candidateSkills = candidateSkills
+    
+  setupTagSearch: ->
+    skillTagsAPI = @skillTagsAPI = $(".tm-input").tagsManager({
+      tagsContainer: "#skills-tags-container"
+      backspace: []
+      validator: (input) => input in @candidateSkills
+    })
+    regex_escape = (str) -> str.replace(/[$-\/?[-^{|}]/g, '\\$&')
+    substringMatcher = (strs) ->
+      return (q, cb) ->
+        matches = []
+        q = regex_escape q
+        substrRegex = new RegExp q, 'i'
+        $.each strs, (i, str) ->
+          if substrRegex.test(str)
+            matches.push
+              value: str
+        cb matches
+        
+    $(".tm-input").typeahead({
+      hint: true
+      highlight: true
+      minLength: 1
+      }, {
+      name: 'skills'
+      displayKey: 'value'
+      source: substringMatcher(@candidateSkills)
+      }
+    ).on 'typeahead:selected', (e, d) =>
+      skillTagsAPI.tagsManager("pushTag",d.value)
 
   applyFilters: ->
     candidateList = _.sortBy @candidates.models, (c) -> c.get('jobProfile').updated
@@ -95,6 +135,15 @@ module.exports = class EmployersView extends RootView
         filteredCandidates = _.difference filteredCandidates, _.filter(filteredCandidates, (c) ->
           fieldValue = c.get('jobProfile').visa
           return not (_.contains filterValues, fieldValue)
+        )
+      else if filterName is 'skillTagsFilter'
+        if filterValues.length is 0
+          return filteredCandidates
+        else  
+          filteredCandidates = _.difference filteredCandidates, _.filter(filteredCandidates, (c) =>
+            fieldValue = c.get('jobProfile').skills
+            sharedValues = _.intersection(fieldValue, filterValues)
+            return not (sharedValues.length is filterValues.length)
         )
       else
         filteredCandidates = _.difference filteredCandidates, _.filter(filteredCandidates, (c) ->
@@ -118,6 +167,7 @@ module.exports = class EmployersView extends RootView
       locationFilter: ['Bay Area', 'New York', 'Other US', 'International']
       roleFilter: ['Web Developer', 'Software Developer', 'Mobile Developer']
       seniorityFilter: ['College Student', 'Recent Grad', 'Junior', 'Senior']
+      skillTagsFilter: []
     @defaultFilters = _.cloneDeep @filters
 
   candidatesInFilter: (filterName, filterValue) =>
@@ -125,10 +175,13 @@ module.exports = class EmployersView extends RootView
     if filterName and filterValue
       if filterName is 'visa'
         return (_.filter candidates, (c) -> c.get('jobProfile').visa is filterValue).length
+      else if filterName is 'skillTagsFilter' 
+        if filterValue.length is 0
+          return candidates
+        else
+          return (_.filter candidates, (c) => Boolean(_.intersection(c.get('jobProfile').skills,filterValue).length))
       else
         return (_.filter candidates, (c) -> c.get('jobProfile').curated?[filterName] is filterValue).length
-    else
-      return Math.floor(Math.random() * 500)
   createFilterAlert: ->
     currentFilterSet = _.cloneDeep @filters
     currentSavedFilters = _.cloneDeep me.get('savedEmployerFilterAlerts') ? []
