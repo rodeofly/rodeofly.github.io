@@ -84,6 +84,12 @@ block content
                         input(type="checkbox" name="seniorityFilter" value="College Student")
                         span(data-i18n="employers.filter_experience_student") College Student
                         |  (#{candidatesInFilter("seniorityFilter","College Student")})
+                     .filter_section#tags_filter
+                      h4(data-i18n="employers.filter_tags") Tags
+                      #skills-tags-container
+                      label
+                        input(type="text" name="tags" placeholder="Tags" class="tm-input")
+                      
 
                 //input#select_all_checkbox(type="checkbox" name="select_all" checked)
                 //| Select all
