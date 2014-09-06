@@ -46,7 +46,16 @@ module.exports.loginUser = (userObject, failure=genericFailure) ->
     (model) -> window.location.reload()
   )
   jqxhr.fail(failure)
-
+module.exports.loginUserWithoutReload = (userObject, failure=genericFailure) ->
+  jqxhr = $.post('/auth/login',
+    {
+      username: userObject.email,
+      password: userObject.password
+    },
+    (model) -> Backbone.Mediator.publish('logged-in-user-without-reload')
+  )
+  jqxhr.fail(failure)
+  
 module.exports.logoutUser = ->
   FB?.logout?()
   res = $.post('/auth/logout', {}, -> window.location.reload())

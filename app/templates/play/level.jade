@@ -8,7 +8,10 @@
     #tome-view
   
   #canvas-wrapper
-    canvas(width=924, height=589)#surface
+    - var width = 924;
+    - var height = 589;
+    - if (iPadApp) { width = iPadWidth; height = iPadHeight;};
+    canvas(width=2048, height=1536)#surface
     #canvas-left-gradient.gradient
     #canvas-top-gradient.gradient
     #goals-view.secret

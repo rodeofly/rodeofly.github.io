@@ -1,5 +1,6 @@
 @import "app/styles/bootstrap/mixins"
 @import "app/styles/mixins"
+@import "app/styles/iPadVariables"
 
 body.is-playing
   background-color: black
@@ -153,3 +154,12 @@ body.is-playing
       a
         color: white
         text-decoration: underline
+
+@include ipadApp
+  #level-view
+    background-color: green
+    #control-bar-view, #tome-view, #code-area
+      display: none
+    #canvas-wrapper
+      width: $iPadViewWidth
+      height: $iPadViewHeight

@@ -109,6 +109,7 @@ module.exports = class CocoRouter extends Backbone.Router
   openView: (view) ->
     @closeCurrentView()
     $('#page-container').empty().append view.el
+    Backbone.Mediator.publish("mobile:current-view-changed")
     window.currentView = view
     @activateTab()
     @renderLoginButtons()

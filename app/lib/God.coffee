@@ -114,6 +114,8 @@ module.exports = class God extends CocoClass
         variableChain: args.variableChain
 
   createDebugWorker: ->
+    if webkit
+      return
     worker = new Worker '/javascripts/workers/worker_world.js'
     worker.addEventListener 'message', @onDebugWorkerMessage
     worker

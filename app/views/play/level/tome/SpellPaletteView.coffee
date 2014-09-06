@@ -100,7 +100,7 @@ module.exports = class SpellPaletteView extends CocoView
     @entries = []
 
     Backbone.Mediator.publish 'tome:update-snippets', propGroups: propGroups, allDocs: allDocs, language: @options.language
-
+    
     for owner, props of propGroups
       for prop in props
         doc = _.find (allDocs['__' + prop] ? []), (doc) ->

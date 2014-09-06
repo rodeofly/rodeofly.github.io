@@ -76,7 +76,7 @@ module.exports = class PlayLevelView extends RootView
     super options
     if not me.get('hourOfCode') and @getQueryVariable 'hour_of_code'
       @setUpHourOfCode()
-
+    window.iPadApp = window.navigator.userAgent.indexOf("iPad") > -1
     @isEditorPreview = @getQueryVariable 'dev'
     @sessionID = @getQueryVariable 'session'
 
@@ -115,6 +115,7 @@ module.exports = class PlayLevelView extends RootView
     @god = new God debugWorker: true
     @levelLoader = new LevelLoader supermodel: @supermodel, levelID: @levelID, sessionID: @sessionID, opponentSessionID: @getQueryVariable('opponent'), team: @getQueryVariable('team')
     @listenToOnce @levelLoader, 'world-necessities-loaded', @onWorldNecessitiesLoaded
+    Backbone.Mediator.publish("mobile:current-view-changed")
 
   # CocoView overridden methods ###############################################
 
@@ -151,6 +152,9 @@ module.exports = class PlayLevelView extends RootView
   getRenderData: ->
     c = super()
     c.world = @world
+    c.iPadApp = window.iPadApp ? false
+    c.iPadWidth = 563 * 2
+    c.iPadHeight = 359 * 2
     if me.get('hourOfCode') and me.lang() is 'en-US'
       # Show the Hour of Code footer explanation until it's been more than a day
       elapsed = (new Date() - new Date(me.get('dateCreated')))
@@ -166,7 +170,7 @@ module.exports = class PlayLevelView extends RootView
 
   afterInsert: ->
     super()
-    @showWizardSettingsModal() if not me.get('name')
+    #@showWizardSettingsModal() if not me.get('name')
 
   # Partially Loaded Setup ####################################################
 
@@ -236,7 +240,7 @@ module.exports = class PlayLevelView extends RootView
     @insertSubView new ChatView levelID: @levelID, sessionID: @session.id, session: @session
     worldName = utils.i18n @level.attributes, 'name'
     @controlBar = @insertSubView new ControlBarView {worldName: worldName, session: @session, level: @level, supermodel: @supermodel, playableTeams: @world.playableTeams}
-  #Backbone.Mediator.publish('level-set-debug', debug: true) if me.displayName() is 'Nick!'
+  Backbone.Mediator.publish('level-set-debug', debug: true) if window.iPadApp
 
   initVolume: ->
     volume = me.get('volume')

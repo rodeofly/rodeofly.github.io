@@ -1,5 +1,5 @@
 @import "app/styles/bootstrap/mixins"
-
+@import "app/styles/iPadVariables"
 @mixin gradient-radial-custom-stops($innerColor: #555, $innerStop: 20%, $outerColor: #333, $outerStop: 70%)
   background-color: $outerColor
   @include gradient-vertical($innerColor, $outerColor)  // IE6-9 fallback on vertical gradient
@@ -38,3 +38,7 @@
     background-image: none
     @include opacity(0.65)
     @include box-shadow(none)
+
+@mixin ipadApp
+  @media only screen and (min-device-width : 768px) and (max-device-width : 1024px)
+    @content

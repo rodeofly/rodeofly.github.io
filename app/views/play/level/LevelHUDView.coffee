@@ -56,7 +56,7 @@ module.exports = class LevelHUDView extends CocoView
     spriteID = e.sprite.thang.id
     @setSpeaker e.sprite
     @stage?.startTalking()
-    @setMessage(e.message, e.mood, e.responses)
+    @setMessage(e.message, e.mood, e.responses) 
     window.tracker?.trackEvent 'Heard Sprite', {speaker: spriteID, message: e.message, label: e.message}, ['Google Analytics']
 
   onDialogueSoundCompleted: ->

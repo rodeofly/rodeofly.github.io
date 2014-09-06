@@ -48,6 +48,7 @@ module.exports = class SpellView extends CocoView
     'tome:change-config': 'onChangeEditorConfig'
     'tome:update-snippets': 'addZatannaSnippets'
     'spell-beautify': 'onSpellBeautify'
+    'mobile:spell-sent': 'onMobileSpellSent'
 
   events:
     'mouseout': 'onMouseOut'
@@ -173,9 +174,18 @@ module.exports = class SpellView extends CocoView
       exec: -> Backbone.Mediator.publish 'tome:fullscreen-view'
 
   fillACE: ->
+
     @ace.setValue @spell.source
     @ace.clearSelection()
 
+  onMobileSpellSent: (e) ->
+    console.log e
+    console.log "Value before"
+    console.log @ace.getValue()
+    console.log "Value after"
+    @ace.setValue e.source
+    console.log @ace.getValue()
+    
   addZatannaSnippets: (e) ->
     snippetEntries = []
     for owner, props of e.propGroups
@@ -245,7 +255,8 @@ module.exports = class SpellView extends CocoView
 
   getSource: ->
     @ace.getValue()  # could also do @firepad.getText()
-
+    
+    
   setThang: (thang) ->
     @focus()
     return if thang.id is @thang?.id
@@ -455,6 +466,7 @@ module.exports = class SpellView extends CocoView
         spellThang.aether[key] = value
 
   onSpellChanged: (e) ->
+    console.log "SPELL CHANGED!#{e}"
     @spellHasChanged = true
 
   onSessionWillSave: (e) ->

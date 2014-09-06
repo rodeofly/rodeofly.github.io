@@ -1,5 +1,6 @@
 @import "../../bootstrap/variables"
 @import "../../bootstrap/mixins"
+@import "../../mixins"
 
 #control-bar-view
   width: 55%
@@ -42,4 +43,8 @@
 
 
   #level-done-button
+    display: none
+    
+@include ipadApp
+  #control-bar-view
     display: none
